@@ -41,6 +41,20 @@ Candidates are scored using explicit capability, runtime-task fit, authenticatio
 - executable paths are represented by basename only
 - no writes in V1
 
+## Public core / private overlay boundary
+
+```text
+public shawnroute core
+  ← imported by a private policy/plugin overlay
+  ← private controller produces a non-executing manifest
+  → public one-way preview adapter
+  → secret-free RoutePlan
+```
+
+The dependency direction is one-way: a private overlay may import `shawnroute`, but the public package must not import private controller or plugin modules. Compatibility adapters accept plain mappings only and explicitly drop raw prompts, owner repositories, filesystem paths, private skill names, and full provider/model selectors.
+
+The first execution lifecycle contracts (`TaskRequest`, `ExecutionRequest`, `ExecutionHandle`, and `VerificationResult`) remain data-only. `RoutePlan` and `ExecutionRequest` accept only `preview_only`; `ExecutionHandle.executes_workers` must be false. The NewBrain compatibility adapter accepts an explicitly non-executing dry-run execution-plan manifest and normalizes it back to a public `preview_only` plan. It does not dispatch a worker.
+
 ## Auxiliary/runtime coexistence
 
 SHawnRoute is not an internal auxiliary replacement. Future execution will only route explicit user-level tasks. Pinned provider/model calls and runtime-internal compression, memory, extraction, or vision helpers bypass the broker. Future envelopes will include `trace_id`, `route_owner`, and `broker_depth` to prevent duplicate dispatch and recursion.

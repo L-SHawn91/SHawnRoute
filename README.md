@@ -13,6 +13,8 @@ Implemented target:
 - read-only runtime detection
 - secret-free capability inventory
 - deterministic, explainable route plans
+- immutable preview-only execution/verification contracts
+- one-way, field-dropping compatibility for explicit dry-run manifests
 - Codex and Claude Code vertical slice
 - stdout-only `doctor`, `inventory`, and `plan`
 

@@ -1,0 +1,25 @@
+{
+  "execution_mode": "dry_run_manifest_only",
+  "executes_workers": false,
+  "writes_canonical_state": false,
+  "command": "private raw request must not be exported",
+  "target_path": "/home/example-user/private-owner-repo",
+  "route": {
+    "execution_mode": "preview_only",
+    "writes_canonical_state": false,
+    "target_repo": "private-owner-repo",
+    "target_path": "/home/example-user/private-owner-repo",
+    "hermes_skill": "private-domain-skill",
+    "action_class": "write",
+    "cost_lane": "normal",
+    "approval_required": false,
+    "model_routing": {
+      "primary_worker": "codex:private-provider/private-model",
+      "permission_lane": "bounded_write"
+    }
+  },
+  "status_summary": {
+    "score": 88,
+    "status": "PASS_WITH_WARN"
+  }
+}
