@@ -1,7 +1,5 @@
 # SHawnRoute V1 Implementation Plan
 
-> **For Hermes:** Execute this plan with strict vertical-slice TDD and independent read-only review.
-
 **Goal:** Build a local-first Python router that detects installed AI agent runtimes, inventories non-secret capabilities, and emits deterministic, explainable task routes without modifying user configuration.
 
 **Architecture:** A runtime-neutral core owns immutable models and deterministic ranking. Runtime adapters own process detection and sanitized status probes. The CLI prints JSON/text to stdout only. Codex and Claude Code prove the adapter contract; additional runtimes are deferred until the vertical slice is stable.
