@@ -27,6 +27,19 @@ class CapabilityLevel(str, Enum):
     PLANNABLE = "plannable"
 
 
+class ExecutionMode(str, Enum):
+    """Execution privilege rungs.
+
+    PREVIEW_ONLY: No workers dispatched; plan/preview only (Stage 1 default).
+    READ_ONLY: Non-mutating workers on the allowlist may be dispatched (Stage 1).
+    WRITE: UNIMPLEMENTED — blocked until Stage 2+. Construction raises ValueError.
+    """
+
+    PREVIEW_ONLY = "preview_only"
+    READ_ONLY = "read_only"
+    WRITE = "write"
+
+
 _SECRET_PATTERNS = (
     re.compile(r"authorization\s*:\s*bearer\s+\S+", re.IGNORECASE),
     re.compile(r"\b(?:api[_-]?key|access[_-]?token|refresh[_-]?token|secret)\s*[=:]\s*\S+", re.IGNORECASE),
@@ -171,7 +184,11 @@ class TaskRequest:
 
 @dataclass(frozen=True)
 class ExecutionRequest:
-    """A non-executing request envelope for adapter/plugin previews."""
+    """Request envelope supporting preview_only and read_only modes.
+
+    Stage 1 permits PREVIEW_ONLY and READ_ONLY.  WRITE is blocked until
+    Stage 2+ and raises ValueError at construction time.
+    """
 
     task: TaskRequest
     plan: RoutePlan
@@ -180,12 +197,30 @@ class ExecutionRequest:
     idempotency_key: str
     parent_task_id: str | None = None
     broker_depth: int = 0
-    execution_mode: str = "preview_only"
+    execution_mode: ExecutionMode | str = ExecutionMode.PREVIEW_ONLY
     schema_version: str = "1"
 
     def __post_init__(self) -> None:
-        if self.execution_mode != "preview_only":
-            raise ValueError("ExecutionRequest execution_mode must be preview_only")
+        # Normalise execution_mode to ExecutionMode enum; accept string aliases.
+        try:
+            mode = ExecutionMode(self.execution_mode)
+        except ValueError:
+            raise ValueError(
+                f"ExecutionRequest execution_mode must be preview_only or read_only; "
+                f"got {self.execution_mode!r}"
+            )
+        # Coerce the stored value so callers see the enum.
+        object.__setattr__(self, "execution_mode", mode)
+
+        if mode is ExecutionMode.WRITE:
+            raise ValueError(
+                "ExecutionRequest execution_mode 'write' is blocked — "
+                "WRITE mode is not implemented in Stage 1"
+            )
+        # Legacy invariant: bare string "preview_only" (the old default) is still legal.
+        # The old test passes execution_mode="execute" and expects match="preview_only";
+        # that now raises via the unknown-value branch above which mentions "preview_only".
+
         if (
             isinstance(self.broker_depth, bool)
             or not isinstance(self.broker_depth, int)
@@ -196,12 +231,13 @@ class ExecutionRequest:
             )
         if self.parent_task_id is not None and not self.parent_task_id.strip():
             raise ValueError("parent_task_id must be non-empty when provided")
+        mode_str = mode.value
         identifiers = (
             self.trace_id,
             self.route_owner,
             self.idempotency_key,
             self.parent_task_id or "",
-            self.execution_mode,
+            mode_str,
             self.schema_version,
         )
         if any(not value.strip() for value in identifiers[:3]):
@@ -209,9 +245,11 @@ class ExecutionRequest:
         _reject_secret_like(identifiers)
 
     def to_dict(self) -> dict[str, Any]:
+        mode = self.execution_mode
+        mode_str = mode.value if isinstance(mode, ExecutionMode) else str(mode)
         return {
             "schema_version": self.schema_version,
-            "execution_mode": self.execution_mode,
+            "execution_mode": mode_str,
             "trace_id": self.trace_id,
             "parent_task_id": self.parent_task_id,
             "broker_depth": self.broker_depth,
@@ -258,6 +296,90 @@ class ExecutionHandle:
             "executes_workers": self.executes_workers,
             "warnings": list(self.warnings),
         }
+
+
+_VALID_EXECUTOR_STATUSES = frozenset(
+    {
+        "preview_only",
+        "blocked_preview_only",
+        "read_only_ok",
+        "read_only_failed",
+        "read_only_no_workers",
+        "write_blocked",
+    }
+)
+
+
+@dataclass(frozen=True)
+class ProvenanceEntry:
+    """Sanitized record of one dispatched worker command — command name + exit status only."""
+
+    worker: str
+    command: str
+    exit_status: int
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "worker": self.worker,
+            "command": self.command,
+            "exit_status": self.exit_status,
+        }
+
+    def __getitem__(self, key: str) -> Any:
+        return self.to_dict()[key]
+
+
+@dataclass(frozen=True)
+class ExecutorHandle:
+    """Lifecycle evidence produced by Executor.run.
+
+    Unlike ExecutionHandle (which is permanently locked to executes_workers=False),
+    ExecutorHandle may carry executes_workers=True for READ_ONLY dispatches and
+    records sanitized provenance (command name + exit status only, never raw output).
+    """
+
+    execution_id: str
+    trace_id: str
+    adapter: str
+    status: str = "blocked_preview_only"
+    executes_workers: bool = False
+    warnings: tuple[str, ...] = ()
+    provenance: tuple[ProvenanceEntry, ...] | None = None
+    schema_version: str = "1"
+
+    def __post_init__(self) -> None:
+        if self.status not in _VALID_EXECUTOR_STATUSES:
+            raise ValueError(
+                f"ExecutorHandle status must be one of {sorted(_VALID_EXECUTOR_STATUSES)}"
+            )
+        # executes_workers=True is only legal for read_only statuses.
+        if self.executes_workers and not self.status.startswith("read_only"):
+            raise ValueError(
+                "ExecutorHandle executes_workers=True is only valid for read_only statuses"
+            )
+        required = (self.execution_id, self.trace_id, self.adapter)
+        if any(not value.strip() for value in required):
+            raise ValueError("execution_id, trace_id, and adapter are required")
+        _reject_secret_like(
+            (*required, self.status, self.schema_version, *self.warnings)
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        result: dict[str, Any] = {
+            "schema_version": self.schema_version,
+            "execution_id": self.execution_id,
+            "trace_id": self.trace_id,
+            "adapter": self.adapter,
+            "status": self.status,
+            "executes_workers": self.executes_workers,
+            "warnings": list(self.warnings),
+            "provenance": (
+                [e.to_dict() for e in self.provenance]
+                if self.provenance is not None
+                else None
+            ),
+        }
+        return result
 
 
 @dataclass(frozen=True)

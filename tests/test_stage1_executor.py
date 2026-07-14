@@ -324,7 +324,7 @@ class TestSecretLeakFixture:
     FAKE_CREDENTIALS = [
         "sk-" + "FAKELEAKTEST1234567890",
         "api_" + "key=NEVER_SURFACE_THIS",
-        "AKIA" + "FAKELEAKTESTABCDE12345",
+        "AKIA" + "FAKELEAKTEST0123",  # exactly 16 uppercase/digit chars after AKIA
         "gh" + "p_FAKELEAKTESTTOKEN1234567890AB",
     ]
 
