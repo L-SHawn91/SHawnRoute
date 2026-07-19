@@ -8,9 +8,26 @@ installed runtimes
   → secret-free RuntimeInfo inventory
   → deterministic Router
   → explainable RoutePlan on stdout
+  → optional bounded READ_ONLY Executor
+  → sanitized provenance only
 ```
 
-V1 stops at the plan. It does not dispatch workers or mutate configuration.
+Routing preview is the default. Stage 1 may dispatch explicitly supplied, allowlisted read-only workers through argv-only subprocess calls. WRITE remains blocked and configuration is not mutated.
+
+## Criticality-gated AUP recovery contract
+
+`shawnroute.recovery` is a runtime-neutral pure policy layer. Runtime adapters classify a completed primary attempt into a sanitized `FailureKind`; the policy never reads raw prompts, stdout, stderr, credentials, or model sessions.
+
+An explicit fallback is allowed only when all gates hold:
+
+1. the primary subprocess failed (`returncode != 0`);
+2. the sanitized failure kind is `aup_refusal`;
+3. criticality is `high_stakes`;
+4. a non-empty escalation reason is recorded.
+
+The decision permits exactly one fresh process and never creates permanent model affinity. Routine requests, successful primary output that merely quotes a refusal marker, timeout, session lock, context overflow, authentication/network failure, malformed output, and other failures all return a no-fallback decision.
+
+The contract uses route names supplied by adapters rather than hardcoding Fable or Opus. A Hermes adapter may map `claude_fable_strategy → claude_opus`; another runtime may use different route names while preserving the same gate.
 
 ## Adapter contract
 
@@ -39,7 +56,7 @@ Candidates are scored using explicit capability, runtime-task fit, authenticatio
 - no environment-value enumeration
 - no token values in evidence, logs, exceptions, or plans
 - executable paths are represented by basename only
-- no writes in V1
+- no configuration writes; Stage 1 WRITE execution remains blocked
 
 ## Public core / private overlay boundary
 
@@ -53,7 +70,7 @@ public shawnroute core
 
 The dependency direction is one-way: a private overlay may import `shawnroute`, but the public package must not import private controller or plugin modules. Compatibility adapters accept plain mappings only and explicitly drop raw prompts, owner repositories, filesystem paths, private skill names, and full provider/model selectors.
 
-The first execution lifecycle contracts (`TaskRequest`, `ExecutionRequest`, `ExecutionHandle`, and `VerificationResult`) remain data-only. `RoutePlan` and `ExecutionRequest` accept only `preview_only`; `ExecutionHandle.executes_workers` must be false. The NewBrain compatibility adapter accepts an explicitly non-executing dry-run execution-plan manifest and normalizes it back to a public `preview_only` plan. It does not dispatch a worker.
+The initial lifecycle contracts (`TaskRequest`, `ExecutionRequest`, `ExecutionHandle`, and `VerificationResult`) preserve preview compatibility. Stage 1 additionally allows `ExecutionRequest.execution_mode=read_only` through `Executor`, whose provenance contains only worker name, command basename, and exit status. `RoutePlan` remains preview-only, WRITE construction is blocked, and the NewBrain compatibility adapter remains non-executing.
 
 ## Auxiliary/runtime coexistence
 

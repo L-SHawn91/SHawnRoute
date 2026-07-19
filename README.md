@@ -6,7 +6,7 @@ SHawnRoute is a local-first, explainable router that detects installed AI agent 
 
 ## Current status
 
-Early V1 implementation. The honest boundary is **routing preview**, not orchestration.
+Early Stage 1 implementation. Routing preview remains the public default. A bounded read-only executor and pure recovery-policy contracts exist, but write execution and autonomous multi-step orchestration remain blocked.
 
 Implemented target:
 
@@ -14,6 +14,8 @@ Implemented target:
 - secret-free capability inventory
 - deterministic, explainable route plans
 - immutable preview-only execution/verification contracts
+- bounded argv-only read-only worker execution with sanitized provenance
+- criticality-gated AUP recovery decisions: routine defaults to no fallback; failed high-stakes AUP requires a non-empty reason and permits one fresh non-affine hop
 - one-way, field-dropping compatibility for explicit dry-run manifests
 - Codex and Claude Code vertical slice
 - stdout-only `doctor`, `inventory`, and `plan`
@@ -21,7 +23,7 @@ Implemented target:
 Deferred:
 
 - config mutation and rollback execution
-- worker dispatch and lifecycle management
+- write-capable worker dispatch, autonomous retry loops, and full lifecycle management
 - hosted credential handling
 - account pooling or model-call resale
 
