@@ -10,3 +10,7 @@ htmlcov/
 .env
 *.token
 *.secret
+
+# SHawn ecosystem shared ignore (Opus P1-4)
+.bak-*
+*/*.bak-*
