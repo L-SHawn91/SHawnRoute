@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+dist/
+build/
+*.egg-info/
+.env
+.env.*
+
+# SHawn ecosystem shared ignore (Opus P1-4)
+.bak-*
+*/*.bak-*

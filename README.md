@@ -29,6 +29,21 @@ Deferred:
 
 ## Development
 
+The former `newbrain-router` public scaffold is maintained in
+[`packages/newbrain-router`](packages/newbrain-router). Its distribution name,
+`newbrain_router.explain()` API, license and approval-required dry-run behavior
+are preserved. The mock API does not launch a worker. Source provenance is in
+that package's `IMPORT_SOURCE.json`; the original source repository is retained.
+
+Install and check both packages in one isolated environment:
+
+```bash
+python -m pip install -e '.[dev]' -e packages/newbrain-router
+python -m pytest
+python -m pytest packages/newbrain-router/tests
+python scripts/public_safety_scan.py
+```
+
 ```bash
 python -m venv .venv
 . .venv/bin/activate

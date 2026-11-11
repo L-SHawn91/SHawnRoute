@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "source_repo": "newbrain-router",
+  "source_commit": "3608101b45cfc892ade0f61944ae9af14fb09736",
+  "source_files_sha256": {
+    ".gitignore": "28c5e37cfb3c00c47c4dd39500facf2410332098a5e9a0243091152b1a93b6b1",
+    "CHANGELOG.md": "59e3ba2cb0acf004c5678d90a5cc7fc85185380d3013195b8c0c37b2f811445e",
+    "CITATION.cff": "64c4ec124874013b709ef57fc1eccc2ef89d7a72bf4e1725953b353ebb4217db",
+    "CONTRIBUTING.md": "013e6cc37e602661e63ab25d8c2cc294f5cc0056b3b203f81f4242679aaaa58c",
+    "LICENSE": "80d4b7e2224e949481c9d76730801bddf1a0673ad3f74648567498040ee393f7",
+    "NOTICE": "3c46ab6a69063c8effc58374413a38629f2651d9f5af8fff4139a9b420d0878f",
+    "README.md": "38e44848c24c02c47f445d12ac5cd8f1e2030cdaefccb9e44777d4b024f64c18",
+    "ROADMAP.md": "c43875832ad711bce78e2a0bbf6a18e05892e80cc6eb4b5346156fdb0deead43",
+    "SECURITY.md": "0c414a2fdc620742d6badac8c718f997231649d9d74ab5b381a9692d68587d0b",
+    "docs/PUBLIC_BOUNDARY.md": "f6f809eb8eaafd44fd30ac3355add1c8d4484ba2d83ef925de3d397ff4b87157",
+    "examples/toy_input.json": "55ff87170cf180a0415ea10b45ad2ebede7025b6c8c7bb585dce8fbce19e3699",
+    "pyproject.toml": "a013192488454b6bb823ff794be590096b508639080771d84e6e8a34cbe585c9",
+    "scripts/public_safety_scan.py": "456be66cc6c81ddffaffddbdeac1069bceaf4f1aa9a8888c2b776d27f7ad3f95",
+    "src/newbrain_router/__init__.py": "c83bff44d5759dd8072624e09965fabe195ff865183c3cf4977be8672711a5c2",
+    "tests/test_public_scaffold.py": "643de57e4c5990f3696ab81432e29c1b5aee6b23d3a346124dff009df3f4c41c"
+  },
+  "original_source_retained": true,
+  "note": "Hashes cover reviewed working files; source history remains in the original repository."
+}

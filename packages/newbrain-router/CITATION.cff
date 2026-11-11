@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: "newbrain-router"
+message: "If you use this public-safe toolkit, please cite the repository."
+authors:
+  - family-names: "SHawn"
+version: 0.1.0
+date-released: "2026-07-09"
+license: Apache-2.0
